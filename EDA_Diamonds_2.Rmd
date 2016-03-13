@@ -1,0 +1,225 @@
+---
+title: "EDA Diamonds 2"
+author: "Francia Moscoso"
+date: "March 12, 2016"
+output: html_document
+---
+setwd("~/SprintboardProject")
+
+**Loading Libraries and 'diamonds' data set**
+```{r LoadLib, message=F, warning=F}
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+```
+
+To silence the execution of the library function eg.library(dplyr), use statement: {r message=F, warning=F}
+```{r loadDiamonds, comment="", echo=TRUE}
+data("diamonds")
+str(diamonds)
+```
+
+<br>
+**Create a scatterplot of price vs x using ggplot syntax.**<br>
+```{r}
+ggplot(aes(x=x, y=price), data=diamonds) +
+      geom_point()
+```
+
+```{r}
+ggplot(aes(x=x, y=price), data=diamonds) +
+      geom_point(alpha=1/20, position = position_jitter(h=0), color = 'orange')
+```
+
+
+<br>      
+**What are the observations about the scatterplot of price vs. x?**<br>
+There is an exponential relationship between price and x.
+Greater activity in x-axis starting from 4 to 7.
+Price with values less than 7,500 has a greater activity for x between 4 and 7.
+Price with values more than 7,500 has an activity for x between 7 and 9.
+
+```{r}
+range(diamonds$x)
+```
+
+<br>
+**What is the correlation between price and y?**<br>
+```{r }
+cor.test(diamonds$price, diamonds$y, method = "pearson")
+
+```
+
+<br>
+**What is the correlation between price and z?**<br>
+```{r }
+cor.test(diamonds$price, diamonds$z, method = "pearson")
+
+```
+
+<br>
+**Create a simple scatter plot of price vs depth.**
+```{r }
+ggplot(aes(x=depth, y=price), data=diamonds) + geom_point()
+```
+
+<br>
+**Change the code to make the transparency of the points to be 1/100 of what they are now and mark the x-axis every 2 units.**
+```{r }
+range(diamonds$depth)
+ggplot(data=diamonds, aes(x=depth, y=price)) +
+      geom_point(alpha=1/100,  
+                 color ='orange') +
+                 scale_x_continuous(breaks = seq(43,79,2))
+```
+<br>
+**Note**: if in the graphic above we use scale_x_discrete(breaks = seq(43,79,2)) the graphs will Starts from 0 and leave an empty space before 43 
+
+<br>
+**Based on the scatterplot of depth vs. price, most diamonds are between what values of depth?**<br>
+60 to 63
+
+<br>
+**What is the correlation of depth vs. price? Based on the correlation coefficient would you use depth to predict the price of a diamond?**<br>
+The correlation -0.01 is too week to predict the price of a diamond.
+```{r }
+cor.test(diamonds$depth, diamonds$price, method = "pearson")
+
+```
+
+<br>
+**Create a scatterplot of price vs carat and omit the top 1% of price and carat values.**
+```{r }
+range(diamonds$price)
+range(diamonds$carat)
+
+range(diamonds$carat)
+ggplot(data=diamonds, aes(x=carat, y=price)) +
+      geom_point(alpha=1/100,  
+                 color ='orange') +
+                 scale_x_continuous(breaks = seq(0,(5-5*0.01),1)) +
+                 scale_y_continuous(breaks = seq(326,(18823-18823*0.01),5000))
+
+```
+
+<br>
+**Create a scatterplot of price vs. volume (x*y*z). This is a very rough approximation for a dismonds's volume. Create a new variable for volumn in the diamonds data frame. This will be useful in a later exercise.**
+```{r }
+diamonds$volume <- diamonds$x*diamonds$y*diamonds$z
+range(diamonds$volume)
+ggplot(data=diamonds, aes(x=volume, y=price)) +
+      geom_point(alpha=1/100,  
+                 color ='orange')
+
+```
+
+<br>
+**What are your observations from the price vs. volume scatterplot?**
+Some volumes are zero. There is an expensive diamond with price close to 4,000.
+There is not significant activity in a volume greater than 400.
+Most of the prices are below 10,000.
+
+You can find out how many diamonds have 0 volume by using count(diamonds$volume == 0). The count function comes with the plyr package.
+**Note**: If you ran the count function from plyr, you need to unload the plyr package detach("package:plyr", unload=TRUE) The plyr will conflict with the dplyr package in later esxercises.
+
+- It does not work:  count(diamonds$volume == 0)  It gives error:
+Error in UseMethod("group_by_") : 
+no applicable method for 'group_by_' applied to an object of class "logical"
+- It does not work: detach("package:plyr", unload=TRUE) gives error:
+Error in detach("package:plyr", unload = TRUE) : invalid 'name' argument
+
+<br>
+**What is the correlation of price and volume? Exclude diamonds that have a volume of 0 or that are greater than or equal to 800?**
+```{r }
+with(subset(diamonds,volume != 0 & volume<800), cor.test(volume,price, method = "pearson"))
+```
+
+<br>
+**Subset the data to exclude diamonds with a volume greater than or equal to 800. Also, exclude diamonds with a volume of 0. Adjust the transparency of the points and add a linear model to the plot.  Do you think this would be a useful model to estimate of price of diamonds? Why or why not?**
+A 0.92 correlation is very strong which is not a good thing. The correlation was an artifact of the nature of the variable. One was really a super set of the other (see plots below).
+
+<br>
+**Create subset that exclude diamonds with a volume greater than or equal to 800.**
+```{r}
+diamondsNewSubset = subset(diamonds,volume != 0 & volume<800)
+```
+
+```{r}
+ggplot(data=diamondsNewSubset, aes(x=volume, y=price)) +
+      geom_point(alpha=1/100) + 
+      geom_smooth(method = "lm")
+```
+
+Reducing x-axis from 0 to 400. However, there is an empty space after the 400 volume.The next plot will display limits much better by using x_lim.
+```{r}
+ggplot(data=diamondsNewSubset, aes(x=volume, y=price)) +
+      geom_point(alpha=1/100) + 
+      scale_x_discrete(breaks = seq(0,400,50)) +
+      geom_smooth(method = "lm")
+```
+
+The following graphic shows better the x-axis than the one above. Look how we replace xlim for scale_x_discrete.
+```{r}
+ggplot(data=diamondsNewSubset, aes(x=volume, y=price)) +
+      geom_point(alpha=1/100) + 
+      xlim(0,400) +
+      #scale_x_discrete(breaks = seq(0,400,50)) +
+      geom_smooth(method = "lm")
+```
+
+<br>
+**Use the function dplyr package to create a new data frame containing info on diamonds by clarity.**<br>
+Name the data frame diamondsByClarity
+The data frame should contain the following: (1) mean_price (2) median_price (3) min_price (4) max_price (5) n, where n is the number of diamonds in each level of clarity.
+```{r }
+diamonds_By_Clarity <- group_by(diamonds, clarity)
+calc_diamonds_By_clarity <- summarise(diamonds_By_Clarity, 
+        mean_price = mean(price),
+        median_price = median(price),  
+        min_price = min(price),
+        n = n())
+calc_diamonds_By_clarity
+```
+
+<br>
+**We have created summary data frames with the mean price by clarity and color. You can run the code in R to verify what data is in the variables diamonds_mp_by_clarity and diamonds_mp_by_color. Your task is to write additional code to create two bar plots on one output image using the grid.arrange function from the package gridExtra.**<br>
+Be sure you have installed and loaded the gridExtra package.
+
+```{r}
+diamonds_by_clarity <- group_by(diamonds, clarity)
+diamonds_mp_by_clarity <- summarise(diamonds_by_clarity, mean_price = mean(price))
+diamonds_mp_by_clarity
+```
+
+```{r}
+diamonds_by_color <- group_by(diamonds, color)
+diamonds_mp_by_color <- summarise(diamonds_by_color, mean_price = mean(price))
+diamonds_mp_by_color
+```
+
+
+```{r}
+p1 <- barplot(diamonds_mp_by_clarity$mean_price)
+p2 <- barplot(diamonds_mp_by_color$mean_price)
+
+```
+
+The grid.arrange function gives error: Error in gList... 
+```{r}
+#grid.arrange(p1,p2,ncol=2)
+
+```
+
+<br>
+**What do you notice in each of the bar charts for mean price by clarity and mean price by color?**<br>
+Mean price tends to decrease as clarity improves.
+This is how it works for mean price across cut:
+```{r}
+diamonds_by_color <- group_by(diamonds, color)
+diamonds_mp_by_color <- summarise(diamonds_by_color, mean_price = mean(price))
+p3 <- barplot(diamonds_mp_by_color$mean_price)
+```
+<br>
+<br>
+<br>
+<br>
